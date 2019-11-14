@@ -10,7 +10,7 @@ var mousePressed = false;
 var mode;
 
 /*
-prepare the drawing canvas 
+prepare the drawing canvas
 */
 $(function() {
     canvas = window._canvas = new fabric.Canvas('canvas');
@@ -19,7 +19,7 @@ $(function() {
     canvas.freeDrawingBrush.color = "black";
     canvas.freeDrawingBrush.width = 10;
     canvas.renderAll();
-    //setup listeners 
+    //setup listeners
     canvas.on('mouse:up', function(e) {
         getFrame();
         mousePressed = false
@@ -33,17 +33,17 @@ $(function() {
 })
 
 /*
-set the table of the predictions 
+set the table of the predictions
 */
 function setTable(top5, probs) {
-    //loop over the predictions 
+    //loop over the predictions
     for (var i = 0; i < top5.length; i++) {
         let sym = document.getElementById('sym' + (i + 1))
         let prob = document.getElementById('prob' + (i + 1))
         sym.innerHTML = top5[i]
         prob.innerHTML = Math.round(probs[i] * 100)
     }
-    //create the pie 
+    //create the pie
     createPie(".pieID.legend", ".pieID.pie");
 
 }
@@ -65,7 +65,7 @@ function recordCoor(event) {
 get the best bounding box by trimming around the drawing
 */
 function getMinBox() {
-    //get coordinates 
+    //get coordinates
     var coorX = coords.map(function(p) {
         return p.x
     });
@@ -73,7 +73,7 @@ function getMinBox() {
         return p.y
     });
 
-    //find top left and bottom right corners 
+    //find top left and bottom right corners
     var min_coords = {
         x: Math.min.apply(null, coorX),
         y: Math.min.apply(null, coorY)
@@ -83,7 +83,7 @@ function getMinBox() {
         y: Math.max.apply(null, coorY)
     }
 
-    //return as strucut 
+    //return as strucut
     return {
         min: min_coords,
         max: max_coords
@@ -91,13 +91,13 @@ function getMinBox() {
 }
 
 /*
-get the current image data 
+get the current image data
 */
 function getImageData() {
-        //get the minimum bounding box around the drawing 
+        //get the minimum bounding box around the drawing
         const mbb = getMinBox()
 
-        //get image data according to dpi 
+        //get image data according to dpi
         const dpi = window.devicePixelRatio
         const imgData = canvas.contextContainer.getImageData(mbb.min.x * dpi, mbb.min.y * dpi,
                                                       (mbb.max.x - mbb.min.x) * dpi, (mbb.max.y - mbb.min.y) * dpi);
@@ -105,31 +105,31 @@ function getImageData() {
     }
 
 /*
-get the prediction 
+get the prediction
 */
 function getFrame() {
-    //make sure we have at least two recorded coordinates 
+    //make sure we have at least two recorded coordinates
     if (coords.length >= 2) {
 
-        //get the image data from the canvas 
+        //get the image data from the canvas
         const imgData = getImageData()
 
-        //get the prediction 
+        //get the prediction
         const pred = model.predict(preprocess(imgData)).dataSync()
 
-        //find the top 5 predictions 
+        //find the top 5 predictions
         const indices = findIndicesOfMax(pred, 5)
         const probs = findTopValues(pred, 5)
         const names = getClassNames(indices)
 
-        //set the table 
+        //set the table
         setTable(names, probs)
     }
 
 }
 
 /*
-get the the class names 
+get the the class names
 */
 function getClassNames(indices) {
     var outp = []
@@ -139,14 +139,14 @@ function getClassNames(indices) {
 }
 
 /*
-load the class names 
+load the class names
 */
 async function loadDict() {
     if (mode == 'ar')
-        loc = 'model2/class_names_ar.txt'
+//        loc = 'model2/class_names_ar.txt'
     else
-        loc = 'model2/class_names.txt'
-    
+        loc = 'modelk/class_names.txt'
+
     await $.ajax({
         url: loc,
         dataType: 'text',
@@ -198,17 +198,17 @@ preprocess the data
 */
 function preprocess(imgData) {
     return tf.tidy(() => {
-        //convert to a tensor 
+        //convert to a tensor
         let tensor = tf.browser.fromPixels(imgData, numChannels = 1)
-        
-        //resize 
+
+        //resize
         const resized = tf.image.resizeBilinear(tensor, [28, 28]).toFloat()
-        
-        //normalize 
+
+        //normalize
         const offset = tf.scalar(255.0);
         const normalized = tf.scalar(1.0).sub(resized.div(offset));
 
-        //We add a dimension to get a batch shape 
+        //We add a dimension to get a batch shape
         const batched = normalized.expandDims(0)
         return batched
     })
@@ -220,16 +220,16 @@ load the model
 async function start(cur_mode) {
     //arabic or english
     mode = cur_mode
-    
-    //load the model 
-    model = await tf.loadLayersModel('model2/model.json')
-    
-    //warm up 
+
+    //load the model
+    model = await tf.loadLayersModel('modelk/model.json')
+
+    //warm up
     model.predict(tf.zeros([1, 28, 28, 1]))
-    
-    //allow drawing on the canvas 
+
+    //allow drawing on the canvas
     allowDrawing()
-    
+
     //load the class names
     await loadDict()
 }
@@ -251,7 +251,7 @@ function allowDrawing() {
 }
 
 /*
-clear the canvs 
+clear the canvs
 */
 function erase() {
     canvas.clear();
